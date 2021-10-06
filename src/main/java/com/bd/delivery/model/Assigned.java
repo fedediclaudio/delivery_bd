@@ -2,16 +2,20 @@ package com.bd.delivery.model;
 
 import com.bd.delivery.utils.DeliveryException;
 
-public class Pending extends OrderStatus{
+public class Assigned extends OrderStatus{
 
-    public Pending() {}
+    public Assigned() {}
 
-    public Pending(Order order) {
+    public Assigned(Order order){
         super(order);
     }
 
-    public boolean canAssigned(){
-        return false;
+    public boolean canRefuse() {
+        return true;
+    }
+
+    public boolean canDeliver() {
+        return true;
     }
 
     public boolean canCancel() {
@@ -22,9 +26,11 @@ public class Pending extends OrderStatus{
         throw new DeliveryException("The order can't be assigned");
     }
 
+    public void refuse() throws DeliveryException {
+        throw new DeliveryException("The order can't be refused");
+    }
+
     public void cancel() throws DeliveryException {
         throw new DeliveryException("The order can't be cancelled");
     }
-
-
 }

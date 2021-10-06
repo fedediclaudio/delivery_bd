@@ -1,5 +1,7 @@
 package com.bd.delivery.model;
 
+import com.bd.delivery.utils.DeliveryException;
+
 import java.util.Date;
 
 public class Order {
@@ -39,7 +41,7 @@ public class Order {
         this.totalPrice = this.priceProducts + product.getPrice();
         this.client = client;
         this.deliveryMan = null;
-        this.orderStatus = new Pending();
+        this.orderStatus = new Pending(this);
     }
 
     public Date getDateOfOrder() {
@@ -128,5 +130,45 @@ public class Order {
 
     public void setOrderStatus(OrderStatus orderStatus) {
         this.orderStatus = orderStatus;
+    }
+
+    public boolean canAssigned(){
+        return this.orderStatus.canAssigned();
+    }
+
+    public boolean canRefuse() {
+        return this.orderStatus.canRefuse();
+    }
+
+    public boolean canDeliver() {
+        return this.orderStatus.canDeliver();
+    }
+
+    public boolean canFinish() {
+        return this.orderStatus.canFinish();
+    }
+
+    public boolean canCancel() {
+        return this.orderStatus.canCancel();
+    }
+
+    public void assign(DeliveryMan deliveryMan) throws DeliveryException {
+        this.orderStatus.assign(deliveryMan);
+    }
+
+    public void refuse() throws DeliveryException {
+        this.orderStatus.refuse();
+    }
+
+    public void deliver() throws DeliveryException {
+        this.orderStatus.deliver();
+    }
+
+    public void cancel() throws DeliveryException {
+        this.orderStatus.cancel();
+    }
+
+    public void finish() throws DeliveryException {
+        this.orderStatus.finish();
     }
 }
