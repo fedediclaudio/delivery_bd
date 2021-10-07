@@ -6,6 +6,10 @@ import java.util.Date;
 
 public class Order {
 
+    private long number;
+
+    private static long nextNumber = 1;
+
     private Date dateOfOrder;
 
     private String address;
@@ -16,11 +20,7 @@ public class Order {
 
     private float coordY;
 
-    private ProductType product;
-
     private float priceProducts;
-
-    private float totalPrice;
 
     private Client client;
 
@@ -30,15 +30,14 @@ public class Order {
 
     public Order(){}
 
-    public Order(Date dateOfOrder, String address, String comments, float coordX, float coordY, ProductType product, float priceProducts, Client client){
+    public Order(Date dateOfOrder, String address, String comments, float coordX, float coordY,  float priceProducts, Client client){
+        this.number = nextNumber++;
         this.dateOfOrder = dateOfOrder;
         this.address = address;
         this.comments = comments;
         this.coordX = coordX;
         this.coordY = coordY;
-        this.product = product;
         this.priceProducts = priceProducts;
-        this.totalPrice = this.priceProducts + product.getPrice();
         this.client = client;
         this.deliveryMan = null;
         this.orderStatus = new Pending(this);
@@ -84,28 +83,12 @@ public class Order {
         this.coordY = coordY;
     }
 
-    public ProductType getProduct() {
-        return product;
-    }
-
-    public void setProduct(ProductType product) {
-        this.product = product;
-    }
-
     public float getPriceProducts() {
         return priceProducts;
     }
 
     public void setPriceProducts(float priceProducts) {
         this.priceProducts = priceProducts;
-    }
-
-    public float getTotalPrice() {
-        return totalPrice;
-    }
-
-    public void setTotalPrice(float totalPrice) {
-        this.totalPrice = totalPrice;
     }
 
     public Client getClient() {
@@ -170,5 +153,13 @@ public class Order {
 
     public void finish() throws DeliveryException {
         this.orderStatus.finish();
+    }
+
+    public long getNumber() {
+        return number;
+    }
+
+    public void setNumber(long number) {
+        this.number = number;
     }
 }

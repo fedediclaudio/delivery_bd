@@ -1,6 +1,7 @@
 package com.bd.delivery.model;
 
 import com.bd.delivery.utils.DeliveryException;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -9,6 +10,7 @@ public class OrderStatus {
 
     protected Date startDate;
 
+    @JsonIgnore
     protected Order order;
 
     public OrderStatus(){}

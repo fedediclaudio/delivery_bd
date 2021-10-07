@@ -15,6 +15,10 @@ public class Sent extends OrderStatus{
     }
 
     public void finish() throws DeliveryException {
-        throw new DeliveryException("The order can't be finish");
+        this.order.setOrderStatus(new Delivered(this.order));
+        this.order.getDeliveryMan().addScore(1);
+        this.order.getDeliveryMan().addNumberOfSuccessfulOrders();
+        this.order.getClient().addScore(1);
+        this.order.getDeliveryMan().setFree(true);
     }
 }

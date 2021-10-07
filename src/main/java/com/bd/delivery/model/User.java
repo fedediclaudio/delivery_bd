@@ -15,6 +15,10 @@ public abstract class User {
 
     private Date dateOfBirth;
 
+    private boolean active;
+
+    private int score;
+
     protected User(){}
 
     protected User(String name, String email, String username, String password, Date dateOfBirth){
@@ -23,6 +27,8 @@ public abstract class User {
         this.username = username;
         this.password = password;
         this.dateOfBirth = dateOfBirth;
+        this.score = 0;
+        this.active = true;
     }
 
     public String getName() {
@@ -63,5 +69,25 @@ public abstract class User {
 
     public void setDateOfBirth(Date dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
+
+    public void addScore(int scoreObtained) {
+        this.score = this.score + scoreObtained;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }
