@@ -2,13 +2,21 @@ package com.bd.delivery.model;
 
 import com.bd.delivery.utils.DeliveryException;
 
+import javax.persistence.Embeddable;
+import java.util.Date;
+
+@Embeddable
 public class Pending extends OrderStatus {
 
     public Pending() {
     }
 
     public Pending(Order order) {
-        super(order);
+        super(order, "Pending");
+    }
+
+    public Pending(Order order, Date startDate) {
+        super(order, "Pending", startDate);
     }
 
     @Override

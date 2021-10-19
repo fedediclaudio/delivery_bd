@@ -9,8 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -21,33 +19,21 @@ class DeliveryApplicationTests {
 	@Autowired
 	private DeliveryService service;
 
-	@BeforeEach
-	void before(){
-		DeliveryRoot.reset();
-	}
 
 	@Test
-	void creationTest() {
+	void creationGetTest(){
 		Client client1 = new Client("Cliente Uno", "clienteuno@mail.com", "clienteuno", "1234", new Date(1990, 3, 3));
 		this.service.newClient(client1);
 		DeliveryMan deliveryMan1 = new DeliveryMan("Dm Uno", "dmuno@mail.com", "dmuno", "1234", new Date(1995, 3, 6));
 		this.service.newDeliveryMan(deliveryMan1);
 
-		assertEquals(DeliveryRoot.getClientList().size(), 1);
-		assertEquals(DeliveryRoot.getDeliveryManList().size(), 1);
-		assertTrue(DeliveryRoot.getClientList().get(0) == client1);
-		assertTrue(DeliveryRoot.getDeliveryManList().get(0) == deliveryMan1);
-	}
+		assertNotNull(this.service.getClientInfo("clienteuno"));
+		assertEquals(this.service.getClientInfo("clienteuno").getEmail(), "clienteuno@mail.com");
+		assertNull(this.service.getClientInfo("clientedos"));
 
-	@Test
-	void getTest(){
-		Client client1 = new Client("Cliente Uno", "clienteuno@mail.com", "clienteuno", "1234", new Date(1990, 3, 3));
-		this.service.newClient(client1);
-		DeliveryMan deliveryMan1 = new DeliveryMan("Dm Uno", "dmuno@mail.com", "dmuno", "1234", new Date(1995, 3, 6));
-		this.service.newDeliveryMan(deliveryMan1);
-
-		assertTrue(this.service.getClientInfo("clienteuno") == client1);
-		assertTrue(this.service.getDeliveryManInfo("dmuno") == deliveryMan1);
+		assertNotNull(this.service.getDeliveryManInfo("dmuno"));
+		assertEquals(this.service.getDeliveryManInfo("dmuno").getEmail(), "dmuno@mail.com");
+		assertNull(this.service.getDeliveryManInfo("dmdos"));
 	}
 
 	@Test
@@ -89,21 +75,26 @@ class DeliveryApplicationTests {
 		Client client1 = new Client("Cliente Uno", "clienteuno@mail.com", "clienteuno", "1234", new Date(1990, 3, 3));
 		this.service.newClient(client1);
 		Order order = new Order(Calendar.getInstance().getTime(), "Calle 1 n1", "Unos productos", 10,10, 100, client1);
-		long numberOrder = order.getNumber();
 		this.service.newOrderPending(order);
+		long numberOrder = order.getNumber();
 
-		assertEquals(order.getOrderStatus().getClass().getName(), "com.bd.delivery.model.Pending");
-		assertTrue(this.service.getOrderinfo(numberOrder) == order);
+		assertEquals(this.service.getOrderinfo(numberOrder).getOrderStatus().getClass().getName(), "com.bd.delivery.model.Pending");
+		assertTrue(this.service.getOrderinfo(numberOrder).getNumber() == order.getNumber());
+
+		boolean res1 = this.service.assignOrder(numberOrder);
+		assertFalse(res1);
 
 		DeliveryMan deliveryMan1 = new DeliveryMan("Dm Uno", "dmuno@mail.com", "dmuno", "1234", new Date(1995, 3, 6));
 		this.service.newDeliveryMan(deliveryMan1);
-		this.service.assignOrder(numberOrder);
+
+		boolean res2 = this.service.assignOrder(numberOrder);
+		assertTrue(res2);
 
 		assertTrue(this.service.getOrderinfo(numberOrder).getDeliveryMan() != null);
 		assertEquals(this.service.getOrderinfo(numberOrder).getDeliveryMan().getUsername(), "dmuno");
-		assertFalse(deliveryMan1.isFree());
-		assertEquals(order.getOrderStatus().getClass().getName(), "com.bd.delivery.model.Assigned");
-		assertEquals(this.service.getAssignedOrders(deliveryMan1.getUsername()).size(), 1);
+		assertFalse(this.service.getOrderinfo(numberOrder).getDeliveryMan().isFree());
+		assertEquals(this.service.getOrderinfo(numberOrder).getOrderStatus().getClass().getName(), "com.bd.delivery.model.Assigned");
+		assertEquals(this.service.getAssignedOrders("dmuno").size(), 1);
 
 		try{
 			this.service.acceptOrder(numberOrder);
@@ -111,8 +102,7 @@ class DeliveryApplicationTests {
 			assertTrue(false);
 		}
 
-		assertEquals(order.getOrderStatus().getClass().getName(), "com.bd.delivery.model.Sent");
-		assertEquals(this.service.getAssignedOrders(deliveryMan1.getUsername()).size(), 0);
+		assertEquals(this.service.getOrderinfo(numberOrder).getOrderStatus().getClass().getName(), "com.bd.delivery.model.Sent");
 
 		try{
 			this.service.finishOrder(numberOrder);
@@ -120,10 +110,11 @@ class DeliveryApplicationTests {
 			assertTrue(false);
 		}
 
-		assertEquals(order.getOrderStatus().getClass().getName(), "com.bd.delivery.model.Delivered");
-		assertEquals(deliveryMan1.getNumberOfSuccessfulOrders(), 1);
-		assertEquals(deliveryMan1.getScore(), 1);
-		assertEquals(client1.getScore(), 1);
+		assertEquals(this.service.getOrderinfo(numberOrder).getOrderStatus().getClass().getName(), "com.bd.delivery.model.Delivered");
+		assertEquals(this.service.getDeliveryManInfo("dmuno").getNumberOfSuccessfulOrders(), 1);
+		assertEquals(this.service.getDeliveryManInfo("dmuno").getScore(), 1);
+		assertEquals(this.service.getClientInfo("clienteuno").getScore(), 1);
+
 	}
 
 	@Test
@@ -131,11 +122,13 @@ class DeliveryApplicationTests {
 		Client client1 = new Client("Cliente Uno", "clienteuno@mail.com", "clienteuno", "1234", new Date(1990, 3, 3));
 		this.service.newClient(client1);
 		Order order = new Order(Calendar.getInstance().getTime(), "Calle 1 n1", "Unos productos", 10,10, 100, client1);
+		order = this.service.newOrderPending(order);
 		long numberOrder = order.getNumber();
-		this.service.newOrderPending(order);
 
-		assertEquals(order.getOrderStatus().getClass().getName(), "com.bd.delivery.model.Pending");
-		assertTrue(this.service.getOrderinfo(numberOrder) == order);
+		Order order1 = this.service.getOrderinfo(order.getNumber());
+
+		assertEquals(order1.getOrderStatus().getClass().getName(), "com.bd.delivery.model.Pending");
+		assertTrue(this.service.getOrderinfo(numberOrder).getNumber() == numberOrder);
 
 		try{
 			this.service.cancelOrder(numberOrder);
@@ -143,8 +136,9 @@ class DeliveryApplicationTests {
 			assertTrue(false);
 		}
 
-		assertEquals(order.getOrderStatus().getClass().getName(), "com.bd.delivery.model.Cancelled");
-		assertEquals(client1.getScore(), -1);
+		assertEquals(this.service.getOrderinfo(numberOrder).getOrderStatus().getClass().getName(), "com.bd.delivery.model.Cancelled");
+		assertEquals(this.service.getClientInfo("clienteuno").getScore(), -1);
+
 	}
 
 	@Test
@@ -152,11 +146,11 @@ class DeliveryApplicationTests {
 		Client client1 = new Client("Cliente Uno", "clienteuno@mail.com", "clienteuno", "1234", new Date(1990, 3, 3));
 		this.service.newClient(client1);
 		Order order = new Order(Calendar.getInstance().getTime(), "Calle 1 n1", "Unos productos", 10,10, 100, client1);
-		long numberOrder = order.getNumber();
 		this.service.newOrderPending(order);
+		long numberOrder = order.getNumber();
 
 		assertEquals(order.getOrderStatus().getClass().getName(), "com.bd.delivery.model.Pending");
-		assertTrue(this.service.getOrderinfo(numberOrder) == order);
+		assertEquals(this.service.getOrderinfo(numberOrder).getNumber(), numberOrder);
 
 		DeliveryMan deliveryMan1 = new DeliveryMan("Dm Uno", "dmuno@mail.com", "dmuno", "1234", new Date(1995, 3, 6));
 		this.service.newDeliveryMan(deliveryMan1);
@@ -164,9 +158,9 @@ class DeliveryApplicationTests {
 
 		assertTrue(this.service.getOrderinfo(numberOrder).getDeliveryMan() != null);
 		assertEquals(this.service.getOrderinfo(numberOrder).getDeliveryMan().getUsername(), "dmuno");
-		assertFalse(deliveryMan1.isFree());
-		assertEquals(order.getOrderStatus().getClass().getName(), "com.bd.delivery.model.Assigned");
-		assertEquals(this.service.getAssignedOrders(deliveryMan1.getUsername()).size(), 1);
+		assertFalse(this.service.getDeliveryManInfo("dmuno").isFree());
+		assertEquals(this.service.getOrderinfo(numberOrder).getOrderStatus().getClass().getName(), "com.bd.delivery.model.Assigned");
+		assertEquals(this.service.getAssignedOrders("dmuno").size(), 1);
 
 		try{
 			this.service.cancelOrder(numberOrder);
@@ -174,10 +168,11 @@ class DeliveryApplicationTests {
 			assertTrue(false);
 		}
 
-		assertEquals(order.getOrderStatus().getClass().getName(), "com.bd.delivery.model.Cancelled");
-		assertEquals(client1.getScore(), -2);
-		assertEquals(deliveryMan1.getNumberOfSuccessfulOrders(), 0);
-		assertEquals(deliveryMan1.getActualOrders().size(), 0);
+		assertEquals(this.service.getOrderinfo(numberOrder).getOrderStatus().getClass().getName(), "com.bd.delivery.model.Cancelled");
+		assertEquals(this.service.getClientInfo("clienteuno").getScore(), -2);
+		assertEquals(this.service.getDeliveryManInfo("dmuno").getNumberOfSuccessfulOrders(), 0);
+		assertEquals(this.service.getAssignedOrders("dmuno").size(), 0);
+
 	}
 
 	@Test
@@ -185,11 +180,12 @@ class DeliveryApplicationTests {
 		Client client1 = new Client("Cliente Uno", "clienteuno@mail.com", "clienteuno", "1234", new Date(1990, 3, 3));
 		this.service.newClient(client1);
 		Order order = new Order(Calendar.getInstance().getTime(), "Calle 1 n1", "Unos productos", 10,10, 100, client1);
-		long numberOrder = order.getNumber();
 		this.service.newOrderPending(order);
+		long numberOrder = order.getNumber();
+
 
 		assertEquals(order.getOrderStatus().getClass().getName(), "com.bd.delivery.model.Pending");
-		assertTrue(this.service.getOrderinfo(numberOrder) == order);
+		assertEquals(this.service.getOrderinfo(numberOrder).getNumber(), numberOrder);
 
 		DeliveryMan deliveryMan1 = new DeliveryMan("Dm Uno", "dmuno@mail.com", "dmuno", "1234", new Date(1995, 3, 6));
 		this.service.newDeliveryMan(deliveryMan1);
@@ -197,9 +193,9 @@ class DeliveryApplicationTests {
 
 		assertTrue(this.service.getOrderinfo(numberOrder).getDeliveryMan() != null);
 		assertEquals(this.service.getOrderinfo(numberOrder).getDeliveryMan().getUsername(), "dmuno");
-		assertFalse(deliveryMan1.isFree());
-		assertEquals(order.getOrderStatus().getClass().getName(), "com.bd.delivery.model.Assigned");
-		assertEquals(this.service.getAssignedOrders(deliveryMan1.getUsername()).size(), 1);
+		assertFalse(this.service.getDeliveryManInfo("dmuno").isFree());
+		assertEquals(this.service.getOrderinfo(numberOrder).getOrderStatus().getClass().getName(), "com.bd.delivery.model.Assigned");
+		assertEquals(this.service.getAssignedOrders("dmuno").size(), 1);
 
 		try{
 			this.service.refuseOrder(numberOrder);
@@ -207,10 +203,10 @@ class DeliveryApplicationTests {
 			assertTrue(false);
 		}
 
-		assertEquals(order.getOrderStatus().getClass().getName(), "com.bd.delivery.model.Cancelled");
-		assertEquals(deliveryMan1.getScore(), -2);
-		assertEquals(deliveryMan1.getNumberOfSuccessfulOrders(), 0);
-		assertEquals(deliveryMan1.getActualOrders().size(), 0);
+		assertEquals(this.service.getOrderinfo(numberOrder).getOrderStatus().getClass().getName(), "com.bd.delivery.model.Cancelled");
+		assertEquals(this.service.getDeliveryManInfo("dmuno").getScore(), -2);
+		assertEquals(this.service.getDeliveryManInfo("dmuno").getNumberOfSuccessfulOrders(), 0);
+		assertEquals(this.service.getAssignedOrders("dmuno").size(), 0);
 	}
 
 }

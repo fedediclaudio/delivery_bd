@@ -2,20 +2,27 @@ package com.bd.delivery.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+@Entity
+@Table(name = "delivery_man")
 public class DeliveryMan extends User{
 
+    @Column(nullable = false)
     private int numberOfSuccessfulOrders;
 
+    @Column
     private boolean free;
 
+    @Column(nullable = false, updatable = false)
     private Date dateOfAdmission;
 
     @JsonIgnore
+    @OneToMany(mappedBy = "deliveryMan", fetch = FetchType.LAZY)
     private List<Order> actualOrders;
 
     public DeliveryMan(){}

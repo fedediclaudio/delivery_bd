@@ -2,36 +2,50 @@ package com.bd.delivery.model;
 
 import com.bd.delivery.utils.DeliveryException;
 
+import javax.persistence.*;
 import java.util.Date;
 
+@Entity
+@Table(name = "order_")
 public class Order {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id_order", unique = true, updatable = false)
     private long number;
 
-    private static long nextNumber = 1;
-
+    @Column(nullable = false, updatable = false)
     private Date dateOfOrder;
 
+    @Column(nullable = false, length = 100)
     private String address;
 
+    @Column(length = 500)
     private String comments;
 
+    @Column(nullable = false)
     private float coordX;
 
+    @Column(nullable = false)
     private float coordY;
 
+    @Column(nullable = false)
     private float priceProducts;
 
+    @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE})
+    @JoinColumn(name = "id_client", nullable = false)
     private Client client;
 
+    @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE})
+    @JoinColumn(name = "id_delivery_man", nullable = true)
     private DeliveryMan deliveryMan;
 
+    @Embedded
     private OrderStatus orderStatus;
 
     public Order(){}
 
     public Order(Date dateOfOrder, String address, String comments, float coordX, float coordY,  float priceProducts, Client client){
-        this.number = nextNumber++;
         this.dateOfOrder = dateOfOrder;
         this.address = address;
         this.comments = comments;
@@ -161,5 +175,30 @@ public class Order {
 
     public void setNumber(long number) {
         this.number = number;
+    }
+
+    /*
+    * Debido a la incompatibilidad de Hibernet y JPA con embebeber la clases hijas, una solucion es instanciar
+    * el estado de manera manual.
+    * La clase que se recupera, si bien es un OrderStatus, no es una clase concreta.
+    */
+    public void setStatusByName(){
+        switch (orderStatus.getName()){
+            case "Pending":
+                this.setOrderStatus(new Pending(this, this.orderStatus.getStartDate()));
+                break;
+            case "Assigned":
+                this.setOrderStatus(new Assigned(this, this.orderStatus.getStartDate()));
+                break;
+            case "Sent":
+                this.setOrderStatus(new Sent(this, this.orderStatus.getStartDate()));
+                break;
+            case "Delivered":
+                this.setOrderStatus(new Delivered(this, this.orderStatus.getStartDate()));
+                break;
+            case "Cancelled":
+                this.setOrderStatus(new Cancelled(this, this.orderStatus.getStartDate()));
+                break;
+        }
     }
 }

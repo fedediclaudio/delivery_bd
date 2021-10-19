@@ -1,22 +1,37 @@
 package com.bd.delivery.model;
 
+import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
 
+@Entity
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public abstract class User {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id_user")
+    private Long id;
+
+    @Column(length = 50, nullable = false)
     private String name;
 
+    @Column(length = 50, unique = true, nullable = false)
     private String email;
 
+    @Column(length = 50, updatable = false, unique = true, nullable = false)
     private String username;
 
+    @Column(length = 50, nullable = false)
     private String password;
 
+    @Column
     private Date dateOfBirth;
 
+    @Column
     private boolean active;
 
+    @Column
     private int score;
 
     protected User(){}
